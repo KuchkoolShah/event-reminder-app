@@ -4,15 +4,14 @@ namespace App\Console\Commands;
 
 use App\Models\Event;
 use App\Models\User;
-use App\Notifications\EventReminderNotification;
+use App\Jobs\SendEventReminderJob;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Log;
 
 class DispatchEventReminders extends Command
 {
     protected $signature = 'reminders:dispatch';
-    protected $description = 'Send reminders for events that have started';
+    protected $description = 'Send reminders for events that have started to all users';
 
     public function handle(): int
     {
@@ -29,18 +28,24 @@ class DispatchEventReminders extends Command
         }
 
         foreach ($events as $event) {
-            // Option 1: Send only to the event creator
-            if ($event->user) {
-                $event->user->notify(new EventReminderNotification($event));
-                $this->info("Reminder queued for event ID {$event->id} to user ID {$event->user_id}");
-            }
+            $delay = 0;
+            $userCount = 0;
 
-            // Option 2: If you need to send to multiple specific users (e.g., attendees)
-            // $event->attendees->each->notify(new EventReminderNotification($event));
+            // Queue notifications with 1 second delay between each
+            User::chunk(100, function ($users) use ($event, &$delay, &$userCount) {
+                foreach ($users as $user) {
+                    SendEventReminderJob::dispatch($user, $event)
+                        ->delay(now()->addSeconds($delay));
+                    $delay++;
+                    $userCount++;
+                }
+            });
 
             $event->update(['reminder_sent' => true]);
+            $this->info("Queued {$userCount} reminders for event ID {$event->id}");
         }
 
+        $this->info('All reminders have been queued successfully!');
         return Command::SUCCESS;
     }
 }
