@@ -3,10 +3,9 @@
 namespace App\Livewire\Admin\Permissions;
 
 use Livewire\Component;
-use Livewire\Attributes\Layout;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-
+use Livewire\Attributes\Layout;
 #[Layout('layouts.app')]
 class Create extends Component
 {
@@ -14,28 +13,16 @@ class Create extends Component
 
     public ?Permission $permission = null;
     public $name = '';
-    public $permission_id = null;
     public $isEditing = false;
-
-
-    public function __construct()
-    {
-
-    }
 
     public function mount(Permission $permission = null)
     {
         if ($permission && $permission->exists) {
-           
-            $this->authorize('permission-edit');
             $this->permission = $permission;
             $this->name = $permission->name;
-            $this->permission_id = $permission->id;
             $this->isEditing = true;
+            // DO NOT authorize here
         } else {
-            // Creating a new permission
-            $this->authorize('permission-create');
-            $this->permission = null;
             $this->isEditing = false;
         }
     }
@@ -53,13 +40,19 @@ class Create extends Component
 
     public function save()
     {
+        if ($this->isEditing) {
+            $this->authorize('permission-edit');
+        } else {
+            $this->authorize('permission-create');
+        }
+
         $this->validate();
 
         if ($this->isEditing) {
             $this->permission->update(['name' => $this->name]);
             session()->flash('message', 'Permission updated successfully.');
         } else {
-            Permission::create(['name' => $this->name]);
+            Permission::create(['name' => $this->name, 'guard_name' => 'web']);
             session()->flash('message', 'Permission created successfully.');
         }
 

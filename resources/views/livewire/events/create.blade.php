@@ -105,59 +105,5 @@
     </div>
 </div>
 @push('scripts')
-<script>
-    function initSummernote() {
-        // Destroy existing instance to avoid duplicates (important on Livewire navigation)
-        if ($('#summernote-description').summernote('destroy')) {
-            // Already destroyed
-        }
 
-        $('#summernote-description').summernote({
-            height: 250,
-            placeholder: 'Add detailed description...',
-            toolbar: [
-                ['style', ['style']],
-                ['font', ['bold', 'italic', 'underline', 'clear']],
-                ['fontname', ['fontname']],
-                ['color', ['color']],
-                ['para', ['ul', 'ol', 'paragraph']],
-                ['table', ['table']],
-                ['insert', ['link', 'picture', 'video']],
-                ['view', ['fullscreen', 'codeview', 'help']]
-            ],
-            styleTags: ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
-            callbacks: {
-                onChange: function(contents) {
-                    // Sync HTML content to Livewire property
-                    @this.set('description', contents);
-                },
-                onInit: function() {
-                    // Load existing description when editing
-                    let initialContent = @json($description);
-                    if (initialContent) {
-                        $('#summernote-description').summernote('code', initialContent);
-                        @this.set('description', initialContent);
-                    }
-                }
-            }
-        });
-    }
-
-    // Initialise on first page load
-    document.addEventListener('livewire:init', function() {
-        initSummernote();
-    });
-
-    // Re-initialise after Livewire updates (e.g., form submit, navigation)
-    document.addEventListener('livewire:navigated', function() {
-        initSummernote();
-    });
-
-    // Also initialise if the DOM is ready immediately
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initSummernote);
-    } else {
-        initSummernote();
-    }
-</script>
 @endpush
