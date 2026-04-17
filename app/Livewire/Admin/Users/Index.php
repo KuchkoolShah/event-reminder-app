@@ -13,19 +13,26 @@ class Index extends Component
 {
     use WithPagination, AuthorizesRequests;
 
+    public $search = '';
+    public $perPage = 10;
     public $showDeleteModal = false;
     public $userIdToDelete = null;
+
+    protected $queryString = ['search', 'perPage'];
 
     public function mount()
     {
         $this->authorize('user-list');
     }
 
-    public function render()
+    public function updatingSearch()
     {
-        return view('livewire.admin.users.index', [
-            'users' => User::paginate(10),
-        ]);
+        $this->resetPage();
+    }
+
+    public function updatingPerPage()
+    {
+        $this->resetPage();
     }
 
     public function confirmDelete($userId)
@@ -61,5 +68,20 @@ class Index extends Component
 
         $this->showDeleteModal = false;
         $this->userIdToDelete = null;
+    }
+
+    public function render()
+    {
+        $users = User::query()
+            ->when($this->search, function ($query) {
+                $query->where('name', 'like', '%' . $this->search . '%')
+                      ->orWhere('email', 'like', '%' . $this->search . '%');
+            })
+            ->orderBy('id', 'asc')
+            ->paginate($this->perPage);
+
+        return view('livewire.admin.users.index', [
+            'users' => $users,
+        ]);
     }
 }

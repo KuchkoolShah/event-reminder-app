@@ -54,17 +54,19 @@
                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                 @enderror
             </div>
-<!-- Description Field with Summernote -->
-<div wire:ignore>
-    <label for="description" class="block text-sm font-medium text-gray-700 mb-1">
-        Description <span class="text-gray-400 text-xs">(optional)</span>
-    </label>
-    <textarea id="summernote-description"
-              class="block w-full border border-gray-300 rounded-lg"></textarea>
-    @error('description')
-        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-    @enderror
-</div>
+
+            <!-- Description Field with Quill (No jQuery) -->
+            <div wire:ignore>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Description <span class="text-gray-400 text-xs">(optional)</span>
+                </label>
+                <div id="editor" style="height: 250px;"></div>
+                <textarea wire:model="description" id="description-hidden" style="display:none;"></textarea>
+                @error('description')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
             <!-- Date & Time Field -->
             <div>
                 <label for="event_time" class="block text-sm font-medium text-gray-700">Event Date & Time</label>
@@ -75,7 +77,7 @@
                 @enderror
             </div>
 
-            <!-- ✅ is_public Toggle (Checkbox) -->
+            <!-- is_public Toggle -->
             <div class="flex items-center">
                 <input type="checkbox" id="is_public" wire:model="is_public"
                     class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
@@ -104,6 +106,66 @@
         </form>
     </div>
 </div>
-@push('scripts')
 
+@push('head')
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+@endpush
+
+@push('scripts')
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <script>
+        let quillEditor = null;
+
+        function initQuill() {
+            if (quillEditor) return; // Already initialized
+
+            const editorElement = document.getElementById('editor');
+            if (!editorElement) return;
+
+            quillEditor = new Quill('#editor', {
+                theme: 'snow',
+                placeholder: 'Add detailed description...',
+                modules: {
+                    toolbar: [
+                        ['bold', 'italic', 'underline', 'strike'],
+                        ['blockquote', 'code-block'],
+                        [{ 'header': 1 }, { 'header': 2 }],
+                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                        [{ 'script': 'sub'}, { 'script': 'super' }],
+                        [{ 'indent': '-1'}, { 'indent': '+1' }],
+                        [{ 'direction': 'rtl' }],
+                        [{ 'size': ['small', false, 'large', 'huge'] }],
+                        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                        [{ 'color': [] }, { 'background': [] }],
+                        [{ 'font': [] }],
+                        [{ 'align': [] }],
+                        ['clean'],
+                        ['link', 'image', 'video']
+                    ]
+                }
+            });
+
+            // Sync on every change
+            quillEditor.on('text-change', function() {
+                const html = quillEditor.root.innerHTML;
+                @this.set('description', html);
+                const hidden = document.getElementById('description-hidden');
+                if (hidden) hidden.value = html;
+            });
+
+            // Set initial content if editing
+            let initialContent = @json($description);
+            if (initialContent) {
+                quillEditor.root.innerHTML = initialContent;
+                @this.set('description', initialContent);
+                const hidden = document.getElementById('description-hidden');
+                if (hidden) hidden.value = initialContent;
+            }
+        }
+
+        // Initialize on Livewire load
+        document.addEventListener('livewire:init', initQuill);
+        document.addEventListener('livewire:navigated', initQuill);
+        document.addEventListener('DOMContentLoaded', initQuill);
+    </script>
 @endpush

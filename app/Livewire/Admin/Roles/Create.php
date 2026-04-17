@@ -22,15 +22,19 @@ class Create extends Component
     {
         $this->authorize('role-create');
         $this->permissions = Permission::select('id', 'name')->get();
-        if ($this->permissions->isEmpty()) {
+
+        // Initialize allSelected based on whether permissions exist
+        if ($this->permissions->isNotEmpty()) {
             $this->allSelected = false;
         }
     }
 
     public function updatedSelectedPermissions()
     {
-        $this->allSelected = !empty($this->permissions) &&
-            count($this->selectedPermissions) === $this->permissions->count();
+        // Safely check if all permissions are selected
+        $this->allSelected = $this->permissions
+            && $this->permissions->isNotEmpty()
+            && count($this->selectedPermissions) === $this->permissions->count();
     }
 
     public function toggleSelectAll()
@@ -62,7 +66,11 @@ class Create extends Component
     {
         $this->validate();
 
-        $role = Role::create(['name' => $this->name]);
+        // Explicitly set guard_name to 'web' for consistency
+        $role = Role::create([
+            'name' => $this->name,
+            'guard_name' => 'web'
+        ]);
 
         if (!empty($this->selectedPermissions)) {
             $role->permissions()->sync($this->selectedPermissions);

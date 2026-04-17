@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Roles;
 
 use Livewire\Component;
+use Livewire\WithPagination;
 use Livewire\Attributes\Layout;
 use Spatie\Permission\Models\Role;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -10,26 +11,28 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 #[Layout('layouts.app')]
 class Index extends Component
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, WithPagination;
 
-    public $roles;
+    public $search = '';
+    public $perPage = 10;
     public $showDeleteModal = false;
     public $roleIdToDelete = null;
 
-    public function __construct()
-    {
-        // Authorize listing roles
-        $this->authorize('role-list');
-    }
+    protected $queryString = ['search', 'perPage'];
 
     public function mount()
     {
-        $this->loadRoles();
+        $this->authorize('role-list');
     }
 
-    public function loadRoles()
+    public function updatingSearch()
     {
-        $this->roles = Role::with('permissions')->get();
+        $this->resetPage();
+    }
+
+    public function updatingPerPage()
+    {
+        $this->resetPage();
     }
 
     public function confirmDelete($id)
@@ -40,12 +43,13 @@ class Index extends Component
 
     public function deleteRole()
     {
-        // Authorize delete action
         $this->authorize('role-delete');
 
         $role = Role::findOrFail($this->roleIdToDelete);
 
-        if (in_array($role->name, ['admin', 'super_admin'])) {
+        // Protect system roles
+        $protectedRoles = ['admin', 'super_admin'];
+        if (in_array($role->name, $protectedRoles)) {
             session()->flash('error', 'System roles cannot be deleted.');
             $this->showDeleteModal = false;
             return;
@@ -54,11 +58,19 @@ class Index extends Component
         $role->delete();
         session()->flash('message', 'Role deleted successfully.');
         $this->showDeleteModal = false;
-        $this->loadRoles();
     }
 
     public function render()
     {
-        return view('livewire.admin.roles.index');
+        $roles = Role::with('permissions')
+            ->when($this->search, function ($query) {
+                $query->where('name', 'like', '%' . $this->search . '%');
+            })
+            ->orderBy('id', 'asc')
+            ->paginate($this->perPage);
+
+        return view('livewire.admin.roles.index', [
+            'roles' => $roles,
+        ]);
     }
 }

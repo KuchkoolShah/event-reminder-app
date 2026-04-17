@@ -26,6 +26,27 @@
         </div>
     @endif
 
+    <!-- Search & Per Page -->
+    <div class="flex flex-col md:flex-row gap-4 mb-6 justify-between items-end">
+        <div class="relative w-full md:w-96">
+            <input type="text"
+                   wire:model.live.debounce.300ms="search"
+                   placeholder="Search role name..."
+                   class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+        </div>
+        <div>
+            <label class="block text-sm text-gray-600 mb-1">Show</label>
+            <select wire:model.live="perPage"
+                    class="rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="15">15</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+            </select>
+        </div>
+    </div>
+
     <!-- Roles Table -->
     <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
         <div class="overflow-x-auto">
@@ -61,9 +82,6 @@
                                     <button wire:click="confirmDelete({{ $role->id }})"
                                             class="text-red-600 hover:text-red-900 transition">Delete</button>
                                 @endcan
-                                {{-- @cannotany(['role-edit', 'role-delete'])
-                                    <span class="text-gray-400 text-xs">No actions</span>
-                                @endcannotany --}}
                             </td>
                         </tr>
                     @empty
@@ -78,6 +96,10 @@
                     @endforelse
                 </tbody>
             </table>
+        </div>
+        <!-- Pagination Links -->
+        <div class="px-6 py-4 border-t border-gray-100">
+            {{ $roles->links() }}
         </div>
     </div>
 

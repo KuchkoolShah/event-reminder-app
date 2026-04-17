@@ -1,4 +1,4 @@
-<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8" wire:poll.30s="$refresh">
+<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
         <div>
@@ -26,54 +26,76 @@
         </div>
     @endif
 
+    <!-- Search & Per Page -->
+    <div class="flex flex-col md:flex-row gap-4 mb-6 justify-between items-end">
+        <div class="relative w-full md:w-96">
+            <input type="text"
+                   wire:model.live.debounce.300ms="search"
+                   placeholder="Search by name or guard..."
+                   class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+        </div>
+        <div>
+            <label class="block text-sm text-gray-600 mb-1">Show</label>
+            <select wire:model.live="perPage"
+                    class="rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="15">15</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+            </select>
+        </div>
+    </div>
+
     <!-- Permissions Table -->
     <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">ID</th>
-                    <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
-                    <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Guard</th>
-                    <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
-                </tr>
+                    <tr>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">ID</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Guard</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                    </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-100">
-                @forelse($permissions as $perm)
-                    <tr class="hover:bg-gray-50 transition duration-150">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-center">{{ $perm->id }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                                {{ $perm->name }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">{{ $perm->guard_name }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3 text-center">
-                             @can('permission-create')
-                                <a href="{{ route('admin.permissions.create', $perm) }}" wire:navigate
-                                   class="text-indigo-600 hover:text-indigo-900 transition">Edit</a>
-                            @endcan
-                            @can('permission-delete')
-                                <button wire:click="confirmDelete({{ $perm->id }})"
-                                        class="text-red-600 hover:text-red-900 transition">Delete</button>
-                            @endcan
-                            {{-- @unless(canany(['permission-create', 'permission-delete']))
-                                <span class="text-gray-400 text-xs">No actions</span>
-                            @endunless --}}
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="4" class="px-6 py-12 text-center text-gray-500">
-                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                            <p class="mt-2">No permissions found.</p>
-                        </td>
-                    </tr>
-                @endforelse
+                    @forelse($permissions as $perm)
+                        <tr class="hover:bg-gray-50 transition duration-150">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-center">{{ $perm->id }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                    {{ $perm->name }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">{{ $perm->guard_name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3 text-center">
+                                @can('permission-edit')
+                                    <a href="{{ route('admin.permissions.create', $perm) }}" wire:navigate
+                                       class="text-indigo-600 hover:text-indigo-900 transition">Edit</a>
+                                @endcan
+                                @can('permission-delete')
+                                    <button wire:click="confirmDelete({{ $perm->id }})"
+                                            class="text-red-600 hover:text-red-900 transition">Delete</button>
+                                @endcan
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="4" class="px-6 py-12 text-center text-gray-500">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                <p class="mt-2">No permissions found.</p>
+                            </td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
+        </div>
+        <!-- Pagination Links -->
+        <div class="px-6 py-4 border-t border-gray-100">
+            {{ $permissions->links() }}
         </div>
     </div>
 

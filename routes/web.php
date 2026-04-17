@@ -28,7 +28,7 @@ Route::view('profile', 'profile')
     ->name('profile');
 
 require __DIR__.'/auth.php';
-Route::middleware(['auth'])
+Route::middleware(['auth','admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
@@ -63,7 +63,24 @@ Route::middleware(['auth'])
             Route::get('/{user}/edit', \App\Livewire\Admin\Users\Edit::class)->name('edit');
         });
 
+        // Impersonation (admin only)
+        Route::get('/login-as/{user}', function (User $user) {
+            if (!auth()->user()->hasRole('admin')) {
+                abort(403);
+            }
+            session()->put('impersonate', auth()->id());
+            auth()->login($user);
+            return redirect()->route('admin.dashboard');
+        })->name('impersonate');
 
+        Route::get('/stop-impersonating', function () {
+            if (!session()->has('impersonate')) {
+                return redirect()->route('admin.dashboard');
+            }
+            auth()->loginUsingId(session('impersonate'));
+            session()->forget('impersonate');
+            return redirect()->route('admin.dashboard');
+        })->name('stop.impersonate');
     });
 
 
