@@ -55,7 +55,7 @@
                 @enderror
             </div>
 
-            <!-- Description Field with Quill (No jQuery) -->
+            <!-- Description Field with Quill -->
             <div wire:ignore>
                 <label class="block text-sm font-medium text-gray-700 mb-1">
                     Description <span class="text-gray-400 text-xs">(optional)</span>
@@ -117,7 +117,7 @@
         let quillEditor = null;
 
         function initQuill() {
-            if (quillEditor) return; // Already initialized
+            if (quillEditor) return;
 
             const editorElement = document.getElementById('editor');
             if (!editorElement) return;
@@ -145,7 +145,6 @@
                 }
             });
 
-            // Sync on every change
             quillEditor.on('text-change', function() {
                 const html = quillEditor.root.innerHTML;
                 @this.set('description', html);
@@ -153,7 +152,6 @@
                 if (hidden) hidden.value = html;
             });
 
-            // Set initial content if editing
             let initialContent = @json($description);
             if (initialContent) {
                 quillEditor.root.innerHTML = initialContent;
@@ -163,7 +161,6 @@
             }
         }
 
-        // Initialize on Livewire load
         document.addEventListener('livewire:init', initQuill);
         document.addEventListener('livewire:navigated', initQuill);
         document.addEventListener('DOMContentLoaded', initQuill);

@@ -53,8 +53,6 @@ class EventService
             ]);
         });
 
-        // ✅ REMOVED: User::chunk(...) block - NO immediate notifications!
-
         return $event;
     }
 

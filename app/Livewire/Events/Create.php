@@ -7,7 +7,7 @@ use Livewire\Component;
 use Livewire\Attributes\Layout;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use App\Services\EventService;   // ✅ Import existing service
+use App\Services\EventService;
 
 #[Layout('layouts.app')]
 class Create extends Component
@@ -22,26 +22,30 @@ class Create extends Component
     public $event_time = '';
     public $is_public = false;
 
+    protected function rules()
+    {
+        return [
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'event_time' => 'required|date|after:now',
+            'is_public' => 'boolean',
+        ];
+    }
+
+    protected function messages()
+    {
+        return [
+            'title.required' => 'The event title is required.',
+            'title.max' => 'The title must not exceed 255 characters.',
+            'event_time.required' => 'The event date and time is required.',
+            'event_time.date' => 'Please provide a valid date and time.',
+            'event_time.after' => 'The event time must be in the future.',
+        ];
+    }
 
     public function boot(EventService $eventService)
     {
         $this->eventService = $eventService;
-    }
-
-    protected function rules()
-    {
-        $rules = [
-            'title'       => 'required|string|max:255',
-            'description' => 'nullable|string|max:1000',
-            'event_time'  => 'required|date',
-            'is_public'   => 'boolean',
-        ];
-
-        if (!$this->eventId) {
-            $rules['event_time'] .= '|after:now';
-        }
-
-        return $rules;
     }
 
     public function mount($event = null)
@@ -49,25 +53,19 @@ class Create extends Component
         if ($event) {
             $this->authorize('events-edit');
 
-            if ($event instanceof Event) {
-                $eventModel = $event;
-            } else {
-                $eventModel = Event::find($event);
-            }
-
-            if (!$eventModel) {
-                abort(404, 'Event not found.');
-            }
+            $eventModel = $event instanceof Event
+                ? $event
+                : Event::findOrFail($event);
 
             if (!auth()->user()->can('events-edit-any') && $eventModel->user_id !== auth()->id()) {
                 abort(403, 'You do not own this event.');
             }
 
-            $this->eventId     = $eventModel->id;
-            $this->title       = $eventModel->title;
+            $this->eventId = $eventModel->id;
+            $this->title = $eventModel->title;
             $this->description = $eventModel->description;
-            $this->event_time  = $eventModel->event_time->format('Y-m-d\TH:i');
-            $this->is_public   = (bool) $eventModel->is_public;
+            $this->event_time = $eventModel->event_time->format('Y-m-d\TH:i');
+            $this->is_public = (bool) $eventModel->is_public;
         } else {
             $this->authorize('events-create');
         }
@@ -75,13 +73,8 @@ class Create extends Component
 
     public function save()
     {
-        if ($this->eventId) {
-            $this->authorize('events-edit');
-        } else {
-            $this->authorize('events-create');
-        }
-
-        $this->validate();
+        // Validate using Livewire's built-in validation
+        $validatedData = $this->validate();
 
         $data = [
             'title'       => $this->title,
@@ -91,9 +84,9 @@ class Create extends Component
         ];
 
         if ($this->eventId) {
+            $this->authorize('events-edit');
 
             $event = Event::findOrFail($this->eventId);
-
 
             if (!auth()->user()->can('events-edit-any') && $event->user_id !== auth()->id()) {
                 abort(403, 'You do not own this event.');
@@ -102,11 +95,18 @@ class Create extends Component
             $this->eventService->updateEvent($event, $data);
             session()->flash('success', 'Event updated successfully.');
         } else {
+            $this->authorize('events-create');
             $this->eventService->createEvent($data, Auth::id());
             session()->flash('success', 'Event created successfully.');
         }
 
         return redirect()->route('admin.events.index');
+    }
+
+    // Optional: Real-time validation
+    public function updated($propertyName)
+    {
+        $this->validateOnly($propertyName);
     }
 
     public function render()

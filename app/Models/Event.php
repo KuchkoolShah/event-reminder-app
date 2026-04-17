@@ -12,16 +12,16 @@ class Event extends Model
     protected $fillable = [
         'user_id',
         'title',
-         'slug',
+        'slug',
         'description',
         'event_time',
         'is_public',
-        'reminder_sent', // ✅ Added
+        'reminder_sent',
     ];
 
     protected $casts = [
         'event_time' => 'datetime',
-        'is_public' => 'boolean', // ✅ Cast to boolean
+        'is_public' => 'boolean',
         'reminder_sent' => 'boolean',
     ];
 
