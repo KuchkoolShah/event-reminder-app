@@ -7,11 +7,12 @@ use App\Models\User;
 use App\Notifications\EventReminderNotification;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class DispatchEventReminders extends Command
 {
     protected $signature = 'reminders:dispatch';
-    protected $description = 'Send reminders for events that have started to all users (throttled)';
+    protected $description = 'Send reminders for events that have started';
 
     public function handle(): int
     {
@@ -28,15 +29,16 @@ class DispatchEventReminders extends Command
         }
 
         foreach ($events as $event) {
-            User::chunk(100, function ($users) use ($event) {
-                foreach ($users as $user) {
-                    $user->notify(new EventReminderNotification($event));
-                    sleep(1); // throttling – 1 email per second
-                }
-            });
+            // Option 1: Send only to the event creator
+            if ($event->user) {
+                $event->user->notify(new EventReminderNotification($event));
+                $this->info("Reminder queued for event ID {$event->id} to user ID {$event->user_id}");
+            }
+
+            // Option 2: If you need to send to multiple specific users (e.g., attendees)
+            // $event->attendees->each->notify(new EventReminderNotification($event));
 
             $event->update(['reminder_sent' => true]);
-            $this->info("Reminder for event ID {$event->id} sent to all users (throttled).");
         }
 
         return Command::SUCCESS;

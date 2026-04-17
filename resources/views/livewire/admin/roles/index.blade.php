@@ -56,37 +56,80 @@
                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">ID</th>
                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Permissions</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Assigned Users</th>
                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-100">
                     @forelse($roles as $role)
+                        @php
+                            $userCount = $role->users->count();
+                            $canDelete = $userCount === 0;
+                        @endphp
                         <tr class="hover:bg-gray-50 transition duration-150">
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-center">{{ $role->id }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-center">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
                                     {{ $role->name }}
                                 </span>
+                                @if($userCount > 0)
+                                    <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        In Use
+                                    </span>
+                                @endif
                             </td>
                             <td class="px-6 py-4 text-sm text-gray-500 text-center">
-                                @foreach($role->permissions as $perm)
-                                    <span class="inline-block bg-gray-100 rounded-full px-2 py-1 text-xs mr-1 mb-1">{{ $perm->name }}</span>
-                                @endforeach
+                                <div class="max-w-xs mx-auto">
+                                    @forelse($role->permissions->take(3) as $perm)
+                                        <span class="inline-block bg-gray-100 rounded-full px-2 py-1 text-xs mr-1 mb-1">{{ $perm->name }}</span>
+                                    @empty
+                                        <span class="text-gray-400 text-xs">No permissions</span>
+                                    @endforelse
+                                    @if($role->permissions->count() > 3)
+                                        <span class="inline-block bg-gray-100 rounded-full px-2 py-1 text-xs mr-1 mb-1">
+                                            +{{ $role->permissions->count() - 3 }} more
+                                        </span>
+                                    @endif
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                @if($userCount > 0)
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        {{ $userCount }} User(s)
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        No Users
+                                    </span>
+                                @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3 text-center">
                                 @can('role-edit')
                                     <a href="{{ route('admin.roles.edit', $role) }}" wire:navigate
-                                       class="text-indigo-600 hover:text-indigo-900 transition">Edit</a>
+                                       class="text-indigo-600 hover:text-indigo-900 transition">
+                                        Edit
+                                    </a>
                                 @endcan
                                 @can('role-delete')
-                                    <button wire:click="confirmDelete({{ $role->id }})"
-                                            class="text-red-600 hover:text-red-900 transition">Delete</button>
+                                    @if($canDelete)
+                                        <button wire:click="confirmDelete({{ $role->id }})"
+                                                class="text-red-600 hover:text-red-900 transition">
+                                            Delete
+                                        </button>
+                                    @else
+                                        <button type="button"
+                                                disabled
+                                                title="Cannot delete role with assigned users"
+                                                class="text-gray-400 cursor-not-allowed">
+                                            Delete
+                                        </button>
+                                    @endif
                                 @endcan
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="px-6 py-12 text-center text-gray-500">
+                            <td colspan="5" class="px-6 py-12 text-center text-gray-500">
                                 <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                 </svg>
@@ -97,7 +140,7 @@
                 </tbody>
             </table>
         </div>
-        <!-- Pagination Links -->
+        <!-- Pagination Links - FIXED: changed from $permissions to $roles -->
         <div class="px-6 py-4 border-t border-gray-100">
             {{ $roles->links() }}
         </div>
@@ -116,13 +159,51 @@
                         </div>
                     </div>
                     <h3 class="text-lg font-semibold text-center text-gray-900 mb-2">Confirm Delete</h3>
-                    <p class="text-sm text-gray-500 text-center mb-6">Are you sure you want to delete this role? All associated permissions will be removed.</p>
-                    <div class="flex justify-end space-x-3">
-                        <button wire:click="$set('showDeleteModal', false)"
-                                class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition">Cancel</button>
-                        <button wire:click="deleteRole"
-                                class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">Delete</button>
-                    </div>
+
+                    @if($hasUsersAssigned)
+                        <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <p class="text-sm text-yellow-800 font-medium mb-2">⚠️ Warning: This role is assigned to {{ $assignedUsersCount }} user(s):</p>
+                            <div class="flex flex-wrap gap-1 mb-2">
+                                @foreach($assignedUsersList as $user)
+                                    <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        {{ $user }}
+                                    </span>
+                                @endforeach
+                                @if($assignedUsersCount > 5)
+                                    <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600">
+                                        +{{ $assignedUsersCount - 5 }} more
+                                    </span>
+                                @endif
+                            </div>
+                            <p class="text-xs text-yellow-700">
+                                You cannot delete this role until it is removed from all assigned users.
+                            </p>
+                        </div>
+                        <div class="flex justify-end">
+                            <button wire:click="$set('showDeleteModal', false)"
+                                    class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition">
+                                Close
+                            </button>
+                        </div>
+                    @else
+                        @php
+                            $roleToDelete = $roles->firstWhere('id', $roleIdToDelete);
+                        @endphp
+                        <p class="text-sm text-gray-500 text-center mb-6">
+                            Are you sure you want to delete role "{{ $roleToDelete?->name }}"?
+                            All associated permissions will be removed.
+                        </p>
+                        <div class="flex justify-end space-x-3">
+                            <button wire:click="$set('showDeleteModal', false)"
+                                    class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition">
+                                Cancel
+                            </button>
+                            <button wire:click="deleteRole"
+                                    class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                                Delete
+                            </button>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

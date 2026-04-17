@@ -35,25 +35,82 @@
         </div>
     </div>
 
-    <!-- Search & Per Page -->
-    <div class="flex flex-col md:flex-row gap-4 mb-6 justify-between items-end">
-        <div class="relative w-full md:w-96">
+  <!-- Filter Bar – Compact & Full Width -->
+<div class="w-full mb-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 items-end">
+        <!-- Search -->
+        <div class="col-span-1 lg:col-span-2">
             <input type="text"
                    wire:model.live.debounce.300ms="search"
                    placeholder="Search title or description..."
-                   class="w-full rounded-lg border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500">
+                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 text-sm">
         </div>
+
+        <!-- Sort Order -->
         <div>
-            <label class="block text-sm text-gray-600 mb-1">Show</label>
+            <select wire:model.live="sortOrder"
+                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 text-sm">
+                <option value="asc">Sort: Soonest first</option>
+                <option value="desc">Sort: Latest first</option>
+            </select>
+        </div>
+
+        <!-- Date Range -->
+        <div>
+            <select wire:model.live="dateRange"
+                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 text-sm">
+                <option value="all">All dates</option>
+                <option value="today">Today</option>
+                <option value="week">This week</option>
+                <option value="month">This month</option>
+                <option value="custom">Custom range</option>
+            </select>
+        </div>
+
+        <!-- Custom Range Date Pickers -->
+        @if($dateRange === 'custom')
+            <div class="col-span-1 lg:col-span-2">
+                <div class="flex gap-1">
+                    <input type="date"
+                           wire:model.live="startDate"
+                           class="w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 text-sm">
+                    <span class="self-center text-gray-500">–</span>
+                    <input type="date"
+                           wire:model.live="endDate"
+                           class="w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 text-sm">
+                </div>
+            </div>
+        @endif
+
+        <!-- Per Page -->
+        <div>
             <select wire:model.live="perPage"
-                    class="rounded-lg border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500">
-                <option value="5">5</option>
-                <option value="10">10</option>
-                <option value="15">15</option>
-                <option value="20">20</option>
+                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-gray-500 text-sm">
+                <option value="5">5 per page</option>
+                <option value="10">10 per page</option>
+                <option value="15">15 per page</option>
+                <option value="20">20 per page</option>
             </select>
         </div>
     </div>
+</div>
+    <!-- Status Filter (only shown when dateRange is 'all') -->
+    @if($dateRange === 'all')
+        <div class="flex gap-3 mb-6">
+            <button wire:click="$set('statusFilter', '')"
+                    class="px-3 py-1 rounded-full text-sm {{ $statusFilter === '' ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-700' }}">
+                All
+            </button>
+            <button wire:click="$set('statusFilter', 'upcoming')"
+                    class="px-3 py-1 rounded-full text-sm {{ $statusFilter === 'upcoming' ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-700' }}">
+                Upcoming
+            </button>
+            <button wire:click="$set('statusFilter', 'passed')"
+                    class="px-3 py-1 rounded-full text-sm {{ $statusFilter === 'passed' ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-700' }}">
+                Passed
+            </button>
+        </div>
+    @endif
 
     <!-- Events Table -->
     @if($events->count())
@@ -68,45 +125,42 @@
                 </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
-                    @foreach($events as $event)
-                        <tr wire:key="event-{{ $event->id }}" class="hover:bg-gray-50">
-                            <td class="px-4 py-3">
-                                <a href="{{ route('admin.events.show', $event) }}"
-                                   class="font-medium text-gray-700 hover:underline">
-                                    {{ $event->title }}
-                                </a>
-                            </td>
-                            <td class="px-4 py-3 text-sm text-gray-600">
-                                {{ $event->event_time->format('M d, Y H:i') }}
-                            </td>
-                            <td class="px-4 py-3">
-                                <span class="px-2 py-1 rounded-full text-xs font-medium
-                                    {{ $event->status == 'Upcoming'
-                                        ? 'bg-green-100 text-green-800'
-                                        : 'bg-gray-100 text-gray-600' }}">
-                                    {{ $event->status }}
-                                </span>
-                            </td>
-                            <td class="px-4 py-3 text-right">
-                                <div class="flex justify-end gap-2">
-                                     @can('events-show')
+                @foreach($events as $event)
+                    <tr wire:key="event-{{ $event->id }}" class="hover:bg-gray-50">
+                        <td class="px-4 py-3">
+                            <a href="{{ route('admin.events.show', $event) }}"
+                               class="font-medium text-gray-700 hover:underline">
+                                {{ $event->title }}
+                            </a>
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-600">
+                            {{ $event->event_time->format('M d, Y H:i') }}
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-1 rounded-full text-xs font-medium
+                                {{ $event->event_time > now() ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600' }}">
+                                {{ $event->event_time > now() ? 'Upcoming' : 'Passed' }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                            <div class="flex justify-end gap-2">
+                                @can('events-show')
                                     <a href="{{ route('admin.events.show', $event->slug) }}"
                                        class="text-blue-600 hover:underline">View</a>
-                                      @endcan
-                                    @can('events-create')
-                                        <a href="{{ route('admin.events.create', $event) }}"
-                                           class="text-gray-600 hover:underline">Edit</a>
-                                    @endcan
-
-                                    @can('events-delete')
-                                        <button wire:click="deleteEvent({{ $event->id }})"
-                                                wire:confirm="Are you sure?"
-                                                class="text-red-600 hover:underline">Delete</button>
-                                    @endcan
-                                </div>
-                            </td>
-                        </tr>
-                    @endforeach
+                                @endcan
+                                @can('events-create')
+                                    <a href="{{ route('admin.events.create', $event) }}"
+                                       class="text-gray-600 hover:underline">Edit</a>
+                                @endcan
+                                @can('events-delete')
+                                    <button wire:click="deleteEvent({{ $event->id }})"
+                                            wire:confirm="Are you sure?"
+                                            class="text-red-600 hover:underline">Delete</button>
+                                @endcan
+                            </div>
+                        </td>
+                    </tr>
+                @endforeach
                 </tbody>
             </table>
         </div>
@@ -120,7 +174,11 @@
             {{ $events->appends([
                 'search' => $search,
                 'statusFilter' => $statusFilter,
-                'perPage' => $perPage
+                'perPage' => $perPage,
+                'sortOrder' => $sortOrder,
+                'dateRange' => $dateRange,
+                'startDate' => $startDate,
+                'endDate' => $endDate,
             ])->links() }}
         </div>
     @else

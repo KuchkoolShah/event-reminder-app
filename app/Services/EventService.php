@@ -11,10 +11,6 @@ use Illuminate\Support\Str;
 
 class EventService
 {
-    /**
-     * Generate a unique slug: slugified-title + YmdHis
-     * Example: "My Event" + "2025-04-17 14:30:00" -> "my-event-20250417143000"
-     */
     protected function generateUniqueSlug(string $title, string $eventTime, ?int $excludeId = null): string
     {
         $titleSlug = Str::slug($title);
@@ -57,12 +53,7 @@ class EventService
             ]);
         });
 
-        User::chunk(100, function ($users) use ($event) {
-            foreach ($users as $user) {
-                $user->notify(new EventReminderNotification($event));
-                sleep(1);
-            }
-        });
+        // ✅ REMOVED: User::chunk(...) block - NO immediate notifications!
 
         return $event;
     }

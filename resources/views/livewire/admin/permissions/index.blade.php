@@ -56,6 +56,7 @@
                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">ID</th>
                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Guard</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Assigned To</th>
                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
@@ -69,8 +70,26 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">{{ $perm->guard_name }}</td>
+                            <td class="px-6 py-4 text-center">
+                                @if($perm->roles->isNotEmpty())
+                                    <div class="flex flex-wrap gap-1 justify-center">
+                                        @foreach($perm->roles->take(3) as $role)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                                {{ $role->name }}
+                                            </span>
+                                        @endforeach
+                                        @if($perm->roles->count() > 3)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
+                                                +{{ $perm->roles->count() - 3 }} more
+                                            </span>
+                                        @endif
+                                    </div>
+                                @else
+                                    <span class="text-xs text-gray-400">No roles assigned</span>
+                                @endif
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3 text-center">
-                                @can('permission-edit')
+                                @can('permission-create')
                                     <a href="{{ route('admin.permissions.create', $perm) }}" wire:navigate
                                        class="text-indigo-600 hover:text-indigo-900 transition">Edit</a>
                                 @endcan
@@ -82,7 +101,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="px-6 py-12 text-center text-gray-500">
+                            <td colspan="5" class="px-6 py-12 text-center text-gray-500">
                                 <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                 </svg>
@@ -112,13 +131,40 @@
                         </div>
                     </div>
                     <h3 class="text-lg font-semibold text-center text-gray-900 mb-2">Confirm Delete</h3>
-                    <p class="text-sm text-gray-500 text-center mb-6">Are you sure you want to delete this permission? This action cannot be undone.</p>
-                    <div class="flex justify-end space-x-3">
-                        <button wire:click="$set('showDeleteModal', false)"
-                                class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition">Cancel</button>
-                        <button wire:click="deletePermission"
-                                class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">Delete</button>
-                    </div>
+
+                    @if(!empty($assignedRoles))
+                        <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <p class="text-sm text-yellow-800 font-medium mb-2">⚠️ Warning: This permission is assigned to:</p>
+                            <div class="flex flex-wrap gap-1">
+                                @foreach($assignedRoles as $role)
+                                    <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        {{ $role }}
+                                    </span>
+                                @endforeach
+                            </div>
+                            <p class="text-xs text-yellow-700 mt-2">
+                                You cannot delete this permission until it is removed from all assigned roles.
+                            </p>
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button wire:click="$set('showDeleteModal', false)"
+                                    class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition">
+                                Close
+                            </button>
+                        </div>
+                    @else
+                        <p class="text-sm text-gray-500 text-center mb-6">Are you sure you want to delete this permission? This action cannot be undone.</p>
+                        <div class="flex justify-end space-x-3">
+                            <button wire:click="$set('showDeleteModal', false)"
+                                    class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition">
+                                Cancel
+                            </button>
+                            <button wire:click="deletePermission"
+                                    class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                                Delete
+                            </button>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
