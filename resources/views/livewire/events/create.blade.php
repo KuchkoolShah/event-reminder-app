@@ -54,24 +54,17 @@
                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                 @enderror
             </div>
-
-            <!-- Description Field -->
-          <!-- Description Field with Summernote -->
-<div x-data="summernoteComponent()" x-init="initSummernote()" wire:ignore>
+<!-- Description Field with Summernote -->
+<div wire:ignore>
     <label for="description" class="block text-sm font-medium text-gray-700 mb-1">
         Description <span class="text-gray-400 text-xs">(optional)</span>
     </label>
-    <div class="relative">
-        <textarea id="summernote-description"
-                  x-ref="summernote"
-                  class="block w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  style="display: none;"></textarea>
-    </div>
+    <textarea id="summernote-description"
+              class="block w-full border border-gray-300 rounded-lg"></textarea>
     @error('description')
         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
     @enderror
 </div>
-
             <!-- Date & Time Field -->
             <div>
                 <label for="event_time" class="block text-sm font-medium text-gray-700">Event Date & Time</label>
@@ -113,40 +106,58 @@
 </div>
 @push('scripts')
 <script>
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('summernoteComponent', () => ({
-            initSummernote() {
-                let self = this;
-                // Initialize Summernote on the hidden textarea
-                $('#summernote-description').summernote({
-                    height: 250,
-                    placeholder: 'Add detailed description...',
-                    toolbar: [
-                        ['style', ['style']],
-                        ['font', ['bold', 'underline', 'clear']],
-                        ['color', ['color']],
-                        ['para', ['ul', 'ol', 'paragraph']],
-                        ['table', ['table']],
-                        ['insert', ['link', 'picture', 'video']],
-                        ['view', ['fullscreen', 'codeview', 'help']]
-                    ],
-                    callbacks: {
-                        onChange: function(contents) {
-                            // Sync Summernote content back to Livewire property
-                            @this.set('description', contents);
-                        },
-                        onInit: function() {
-                            // Set initial content if editing an existing event
-                            let initialContent = @json($description);
-                            if (initialContent) {
-                                $('#summernote-description').summernote('code', initialContent);
-                                @this.set('description', initialContent);
-                            }
-                        }
+    function initSummernote() {
+        // Destroy existing instance to avoid duplicates (important on Livewire navigation)
+        if ($('#summernote-description').summernote('destroy')) {
+            // Already destroyed
+        }
+
+        $('#summernote-description').summernote({
+            height: 250,
+            placeholder: 'Add detailed description...',
+            toolbar: [
+                ['style', ['style']],
+                ['font', ['bold', 'italic', 'underline', 'clear']],
+                ['fontname', ['fontname']],
+                ['color', ['color']],
+                ['para', ['ul', 'ol', 'paragraph']],
+                ['table', ['table']],
+                ['insert', ['link', 'picture', 'video']],
+                ['view', ['fullscreen', 'codeview', 'help']]
+            ],
+            styleTags: ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+            callbacks: {
+                onChange: function(contents) {
+                    // Sync HTML content to Livewire property
+                    @this.set('description', contents);
+                },
+                onInit: function() {
+                    // Load existing description when editing
+                    let initialContent = @json($description);
+                    if (initialContent) {
+                        $('#summernote-description').summernote('code', initialContent);
+                        @this.set('description', initialContent);
                     }
-                });
-            },
-        }));
+                }
+            }
+        });
+    }
+
+    // Initialise on first page load
+    document.addEventListener('livewire:init', function() {
+        initSummernote();
     });
+
+    // Re-initialise after Livewire updates (e.g., form submit, navigation)
+    document.addEventListener('livewire:navigated', function() {
+        initSummernote();
+    });
+
+    // Also initialise if the DOM is ready immediately
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initSummernote);
+    } else {
+        initSummernote();
+    }
 </script>
 @endpush

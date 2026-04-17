@@ -20,7 +20,7 @@
 
             <div class="mt-4 space-y-2 text-gray-700">
                 <p><strong class="font-medium text-gray-900">Description:</strong>
-                    {{ $event->description ?: 'No description' }}
+                     {!! $event->description ?: 'No description' !!}
                 </p>
                 <p><strong class="font-medium text-gray-900">Date & Time:</strong>
                     {{ $event->event_time->format('l, F j, Y \a\t g:i A') }}

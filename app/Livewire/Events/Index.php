@@ -60,33 +60,36 @@ class Index extends Component
 
     protected function getBaseQuery()
     {
-  
+
         if (auth()->user()->hasRole('admin') || auth()->user()->can('events-view-all')) {
             return Event::query();
         }
         return Event::where('user_id', auth()->id());
     }
 
-    protected function getFilteredEvents()
-    {
-        $query = $this->getBaseQuery();
+ protected function getFilteredEvents()
+{
+    $query = $this->getBaseQuery();
 
-        if ($this->search) {
-            $query->where(function ($q) {
-                $q->where('title', 'like', '%' . $this->search . '%')
-                  ->orWhere('description', 'like', '%' . $this->search . '%');
-            });
-        }
-
-        if ($this->statusFilter === 'upcoming') {
-            $query->where('event_time', '>', now());
-        } elseif ($this->statusFilter === 'passed') {
-            $query->where('event_time', '<=', now());
-        }
-
-        return $query->orderBy('event_time', 'asc');
+    if ($this->search) {
+        $query->where(function ($q) {
+            $q->where('title', 'like', '%' . $this->search . '%')
+              ->orWhere('description', 'like', '%' . $this->search . '%');
+        });
     }
 
+    if ($this->statusFilter === 'upcoming') {
+        $query->where('event_time', '>', now())
+              ->orderBy('event_time', 'asc');   // soonest upcoming first
+    } elseif ($this->statusFilter === 'passed') {
+        $query->where('event_time', '<=', now())
+              ->orderBy('event_time', 'desc');  // most recent passed first
+    } else {
+        $query->orderBy('event_time', 'desc');  // all events, newest first
+    }
+
+    return $query;
+}
     public function render()
     {
 
