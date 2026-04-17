@@ -14,12 +14,17 @@ class Show extends Component
     use AuthorizesRequests;
 
     public Event $event;
+    public string $status;
+    public bool $isExpired;
 
-    // ✅ Accept the Event model (automatically resolved by Laravel)
     public function mount(Event $event)
     {
         $this->event = $event;
         $this->authorize('events-show');
+
+        // Compute status and expired flag
+        $this->status = $event->event_time->isFuture() ? 'Upcoming' : 'Passed';
+        $this->isExpired = $event->event_time->isPast();
     }
 
     public function delete()
