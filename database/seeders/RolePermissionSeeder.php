@@ -13,28 +13,23 @@ class RolePermissionSeeder extends Seeder
     {
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // ---------- ALL PERMISSIONS ----------
         $permissions = [
-            // Permission management
             'permission-list',
             'permission-create',
             'permission-edit',
             'permission-delete',
 
-            // Role management
             'role-list',
             'role-create',
             'role-edit',
             'role-delete',
 
-            // Event management (renamed to match your pattern)
             'events-list',
             'events-create',
             'events-edit',
             'events-delete',
             'events-show',
 
-            // User management
             'user-list',
             'user-create',
             'user-edit',
@@ -46,20 +41,24 @@ class RolePermissionSeeder extends Seeder
             Permission::firstOrCreate(['name' => $perm]);
         }
 
-        // ---------- CREATE ROLES & ASSIGN PERMISSIONS DYNAMICALLY ----------
-
-        // Admin role – gets ALL permissions
+        // Admin
         $adminRole = Role::firstOrCreate(['name' => 'admin']);
-        $adminRole->givePermissionTo(Permission::all());
+        $adminRole->syncPermissions(Permission::all());
 
-        // Event manager role – dynamically assign all permissions starting with 'events-'
+        // Event Manager
         $managerRole = Role::firstOrCreate(['name' => 'event-manager']);
-        $eventPermissions = Permission::where('name', 'like', 'events-%')->get();
-        $managerRole->syncPermissions($eventPermissions);
+        $managerRole->syncPermissions(
+            Permission::where('name', 'like', 'events-%')->get()
+        );
 
-        // User Manager role – dynamically assign all permissions starting with 'user-'
+        // User Manager
         $userManagerRole = Role::firstOrCreate(['name' => 'user-manager']);
-        $userPermissions = Permission::where('name', 'like', 'user-%')->get();
-        $userManagerRole->syncPermissions($userPermissions);
+        $userManagerRole->syncPermissions(
+            Permission::where('name', 'like', 'user-%')->get()
+        );
+
+        // Normal User
+        $userRole = Role::firstOrCreate(['name' => 'user']);
+        $userRole->syncPermissions(['events-show']);
     }
 }

@@ -8,23 +8,34 @@ use Spatie\Permission\Models\Role;
 
 class AdminUserSeeder extends Seeder
 {
-    public function run()
+    public function run(): void
     {
-        // Create admin user if not exists
-        $user = User::firstOrCreate(
+        // Create roles
+        $adminRole = Role::firstOrCreate(['name' => 'admin']);
+        $userRole  = Role::firstOrCreate(['name' => 'user']);
+
+        // Create Admin User
+        $admin = User::firstOrCreate(
             ['email' => 'admin@example.com'],
             [
                 'name' => 'Super Admin',
-                'password' => bcrypt('password123'), // Change this!
+                'password' => bcrypt('password'),
             ]
         );
 
-        // Find the 'admin' role (lowercase, as created in RolePermissionSeeder)
-        $role = Role::firstOrCreate(['name' => 'admin']);
+        // Assign only admin role
+        $admin->syncRoles([$adminRole]);
 
-        // Assign role if not already assigned
-        if (!$user->hasRole($role)) {
-            $user->assignRole($role);
-        }
+        // Create Normal User
+        $user = User::firstOrCreate(
+            ['email' => 'user@example.com'],
+            [
+                'name' => 'User',
+                'password' => bcrypt('password'),
+            ]
+        );
+
+        // Assign only user role
+        $user->syncRoles([$userRole]);
     }
 }

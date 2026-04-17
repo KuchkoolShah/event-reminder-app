@@ -11,6 +11,7 @@ return new class extends Migration
         Schema::table('events', function (Blueprint $table) {
             $table->boolean('reminder_sent')->default(false)->after('event_time');
             // Optimised index for the scheduler query
+            $table->string('slug')->unique()->after('title');
             $table->index(['event_time', 'reminder_sent']);
         });
     }
@@ -19,6 +20,7 @@ return new class extends Migration
     {
         Schema::table('events', function (Blueprint $table) {
             $table->dropColumn('reminder_sent');
+            $table->dropColumn('slug');
             $table->dropIndex(['event_time', 'reminder_sent']);
         });
     }

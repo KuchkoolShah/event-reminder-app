@@ -29,9 +29,11 @@ new class extends Component {
 
                 <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('dashboard')" wire:navigate>
-                        {{ __('Dashboard') }}
-                    </x-nav-link>
+                   @if(auth()->user()->hasRole('admin'))
+                        <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')" wire:navigate>
+                            {{ __('Dashboard') }}
+                        </x-nav-link>
+                    @endif
                     @can('events-list')
                         <x-nav-link :href="route('admin.events.index')" :active="request()->routeIs('events.*')" wire:navigate>
                             {{ __('Events') }}
@@ -137,7 +139,7 @@ new class extends Component {
                 </x-responsive-nav-link>
             @endcan
         </div>
-
+@auth
         <!-- Responsive Settings Options -->
         <div class="pt-4 pb-1 border-t border-gray-200">
             <div class="px-4">
@@ -159,5 +161,6 @@ new class extends Component {
                 </button>
             </div>
         </div>
+        @endauth
     </div>
 </nav>

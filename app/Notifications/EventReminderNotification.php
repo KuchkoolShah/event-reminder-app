@@ -30,8 +30,7 @@ class EventReminderNotification extends Notification implements ShouldQueue
 
     public function toMail($notifiable)
     {
-        $url = route('admin.events.show', $this->event);
-
+        $url = route('admin.events.show', $this->event->slug);
         $mail = (new MailMessage)
             ->subject('Reminder: ' . $this->event->title)
             ->line('Your event is happening now!')

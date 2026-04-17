@@ -6,57 +6,105 @@ use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use App\Models\Event;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 use Livewire\Attributes\Layout;
 use Carbon\Carbon;
 
 #[Layout('layouts.app')]
 class Dashboard extends Component
 {
-    public $totalUsers;
-    public $totalEvents;
-    public $newUsersThisMonth;
-    public $upcomingEvents;
-    public $recentEvents;
-    public $chartData;
+    // Common
+    public $isAdmin = false;
+
+    // Admin properties (with safe defaults)
+    public $totalUsers = 0;
+    public $totalEvents = 0;
+    public $newUsersThisMonth = 0;
+    public $upcomingEvents = 0;
+    public $recentEvents = [];          // ✅ initialized as empty array
+    public $chartData = ['labels' => [], 'values' => []];
+    public $totalRoles = 0;
+    public $totalPermissions = 0;
+    public $eventsToday = 0;
+    public $eventsThisWeek = 0;
+    public $eventsThisMonth = 0;
+
+    // User properties (with safe defaults)
+    public $myEventsCount = 0;
+    public $myUpcomingEventsCount = 0;
+    public $myPastEventsCount = 0;
+    public $recentMyEvents = [];         // ✅ initialized as empty array
 
     public function mount()
     {
-        if (!in_array(Auth::user()->role, [0, 1])) {
-            abort(403, 'Unauthorized');
-        }
+        $user = Auth::user();
+        $this->isAdmin = $user->hasRole('admin');
 
+        if ($this->isAdmin) {
+            $this->loadAdminData();
+        } else {
+            $this->loadUserData();
+        }
+    }
+
+    private function loadAdminData()
+    {
         $this->totalUsers = User::count();
         $this->totalEvents = Event::count();
+        $this->totalRoles = Role::count();
+        $this->totalPermissions = Permission::count();
 
         $this->newUsersThisMonth = User::whereMonth('created_at', Carbon::now()->month)
             ->whereYear('created_at', Carbon::now()->year)
             ->count();
 
-        // Upcoming events (next 7 days) based on event_time
+        $this->eventsToday = Event::whereDate('event_time', Carbon::today())->count();
+        $this->eventsThisWeek = Event::whereBetween('event_time', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])->count();
+        $this->eventsThisMonth = Event::whereMonth('event_time', Carbon::now()->month)
+            ->whereYear('event_time', Carbon::now()->year)
+            ->count();
+
         $this->upcomingEvents = Event::where('event_time', '>=', Carbon::today())
             ->where('event_time', '<=', Carbon::today()->addDays(7))
             ->count();
 
-        // Recent events (last 5) ordered by event_time
+        // ✅ returns a Collection, never null
         $this->recentEvents = Event::orderBy('event_time', 'desc')->take(5)->get();
 
-        // Chart data: events per month (last 6 months) using event_time
-        $months = collect();
-        $eventsCount = collect();
-
+        // Chart data – safe arrays
+        $months = [];
+        $eventsCount = [];
         for ($i = 5; $i >= 0; $i--) {
             $month = Carbon::now()->subMonths($i);
-            $months->push($month->format('M Y'));
-            $count = Event::whereYear('event_time', $month->year)
+            $months[] = $month->format('M Y');
+            $eventsCount[] = Event::whereYear('event_time', $month->year)
                 ->whereMonth('event_time', $month->month)
                 ->count();
-            $eventsCount->push($count);
         }
-
         $this->chartData = [
             'labels' => $months,
             'values' => $eventsCount,
         ];
+    }
+
+    private function loadUserData()
+    {
+        $userId = Auth::id();
+
+        $this->myEventsCount = Event::where('user_id', $userId)->count();
+        $this->myUpcomingEventsCount = Event::where('user_id', $userId)
+            ->where('event_time', '>=', Carbon::today())
+            ->count();
+        $this->myPastEventsCount = Event::where('user_id', $userId)
+            ->where('event_time', '<', Carbon::today())
+            ->count();
+
+        // ✅ returns a Collection, never null
+        $this->recentMyEvents = Event::where('user_id', $userId)
+            ->orderBy('event_time', 'desc')
+            ->take(5)
+            ->get();
     }
 
     public function render()

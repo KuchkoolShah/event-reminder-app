@@ -1,5 +1,6 @@
 <?php
 
+use Spatie\Permission\Models\Role; // add at top
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Auth;
@@ -19,7 +20,7 @@ new #[Layout('layouts.guest')] class extends Component
     {
         $validated = $this->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
         ]);
 
@@ -27,80 +28,80 @@ new #[Layout('layouts.guest')] class extends Component
 
         event(new Registered($user = User::create($validated)));
 
+        // Assign default role "user" (must exist in database)
+        $user->assignRole('user');
+
         Auth::login($user);
 
-        $this->redirect(route('dashboard', absolute: false), navigate: true);
+        $this->redirectIntended(default: route('admin.dashboard', absolute: false), navigate: true);
     }
 };
 ?>
 
-<!-- Very light gray background – almost white -->
-<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-    <!-- Pure white card with a subtle shadow (no colors) -->
-    <div class="max-w-md w-full bg-white rounded-lg shadow-sm p-8">
-        <!-- Header (no colors) -->
-        <div class="text-center mb-8">
-            <h2 class="text-2xl font-bold text-gray-900">Create an account</h2>
-            <p class="mt-2 text-sm text-gray-500">Sign up to get started</p>
+<div class="min-h-screen flex items-center justify-center bg-white px-4">
+
+    <div class="w-full max-w-md bg-white border border-gray-200 rounded-2xl shadow-sm p-8">
+
+        <!-- Header -->
+        <div class="text-center">
+            <div class="mx-auto h-16 w-16 bg-white border border-gray-200 rounded-2xl flex items-center justify-center shadow-sm">
+                <svg class="h-8 w-8 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+            </div>
+
+            <h2 class="mt-6 text-2xl font-bold text-gray-900">Create Account</h2>
+            <p class="mt-2 text-sm text-gray-500">Sign up to continue</p>
         </div>
 
-        <!-- Registration Form -->
-        <form wire:submit="register" class="space-y-5">
-            <!-- Name -->
-            <div>
-                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                <input type="text" id="name" wire:model.live="name"
-                       class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
-                       required autofocus autocomplete="name">
-                @error('name')
-                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                @enderror
-            </div>
+        <!-- Form -->
+        <form wire:submit="register" class="mt-6 space-y-4">
 
-            <!-- Email -->
-            <div>
-                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email address</label>
-                <input type="email" id="email" wire:model.live="email"
-                       class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
-                       required autocomplete="username">
-                @error('email')
-                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                @enderror
-            </div>
+            <input type="text" wire:model.live="name"
+                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-0"
+                placeholder="Full Name">
 
-            <!-- Password -->
-            <div>
-                <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                <input type="password" id="password" wire:model.live="password"
-                       class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
-                       required autocomplete="new-password">
-                @error('password')
-                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                @enderror
-            </div>
+            @error('name')
+                <p class="text-red-500 text-sm">{{ $message }}</p>
+            @enderror
 
-            <!-- Confirm Password -->
-            <div>
-                <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
-                <input type="password" id="password_confirmation" wire:model.live="password_confirmation"
-                       class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
-                       required autocomplete="new-password">
-                @error('password_confirmation')
-                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                @enderror
-            </div>
+            <input type="email" wire:model.live="email"
+                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-0"
+                placeholder="Email">
 
-            <!-- Buttons – all gray, no indigo -->
+            @error('email')
+                <p class="text-red-500 text-sm">{{ $message }}</p>
+            @enderror
+
+            <input type="password" wire:model.live="password"
+                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-0"
+                placeholder="Password">
+
+            @error('password')
+                <p class="text-red-500 text-sm">{{ $message }}</p>
+            @enderror
+
+            <input type="password" wire:model.live="password_confirmation"
+                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-0"
+                placeholder="Confirm Password">
+
+            <!-- Actions -->
             <div class="flex items-center justify-between pt-2">
-                <a href="{{ route('login') }}" wire:navigate
-                   class="text-sm text-gray-600 hover:text-gray-800 underline">
+
+                <a href="{{ route('login') }}"
+                   class="text-sm text-gray-600 hover:text-gray-900 underline">
                     Already registered?
                 </a>
+
                 <button type="submit"
-                        class="inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-700 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                    class="px-6 py-3 bg-gray-900 text-white rounded-xl hover:bg-black transition">
                     Register
                 </button>
+
             </div>
+
         </form>
+
     </div>
 </div>

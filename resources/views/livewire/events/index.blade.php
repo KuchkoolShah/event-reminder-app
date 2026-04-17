@@ -90,7 +90,7 @@
                             <td class="px-4 py-3 text-right">
                                 <div class="flex justify-end gap-2">
                                      @can('events-show')
-                                    <a href="{{ route('admin.events.show', $event) }}"
+                                    <a href="{{ route('admin.events.show', $event->slug) }}"
                                        class="text-blue-600 hover:underline">View</a>
                                       @endcan
                                     @can('events-create')

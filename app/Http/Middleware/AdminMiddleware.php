@@ -15,9 +15,19 @@ class AdminMiddleware
      */
     public function handle(Request $request, Closure $next)
     {
-        if (!auth()->check() || !auth()->user()->isAdmin()) {
-            abort(403, 'Unauthorized – admin access required.');
+        if (!auth()->check()) {
+            abort(403, 'Unauthorized – Login required.');
         }
+
+        // Optional: allow only specific roles
+        if (
+            !auth()
+                ->user()
+                ->hasAnyRole(['admin', 'user'])
+        ) {
+            abort(403, 'You do not have permission.');
+        }
+
         return $next($request);
     }
 }
