@@ -21,12 +21,12 @@ class Edit extends Component
 
     public function mount(Role $role)
     {
-        $this->authorize('role-edit');  // ensure this permission exists
+        $this->authorize('role-edit');
 
         $this->role = $role;
         $this->name = $role->name;
         $this->selectedPermissions = $role->permissions->pluck('id')->toArray();
-        $this->permissions = Permission::select('id', 'name')->get(); // only needed columns
+        $this->permissions = Permission::select('id', 'name')->get();
 
         $this->updateAllSelectedState();
     }
@@ -63,7 +63,6 @@ class Edit extends Component
     {
         $this->validate();
 
-        // Protect system roles from name change (optional)
         $systemRoles = ['super-admin', 'admin'];
         if (in_array($this->role->name, $systemRoles) && $this->role->name !== $this->name) {
             session()->flash('error', 'System role names cannot be changed.');

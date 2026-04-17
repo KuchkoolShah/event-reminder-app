@@ -17,12 +17,11 @@ class Dashboard extends Component
     // Common
     public $isAdmin = false;
 
-    // Admin properties (with safe defaults)
     public $totalUsers = 0;
     public $totalEvents = 0;
     public $newUsersThisMonth = 0;
     public $upcomingEvents = 0;
-    public $recentEvents = [];          // ✅ initialized as empty array
+    public $recentEvents = [];
     public $chartData = ['labels' => [], 'values' => []];
     public $totalRoles = 0;
     public $totalPermissions = 0;
@@ -30,11 +29,11 @@ class Dashboard extends Component
     public $eventsThisWeek = 0;
     public $eventsThisMonth = 0;
 
-    // User properties (with safe defaults)
+
     public $myEventsCount = 0;
     public $myUpcomingEventsCount = 0;
     public $myPastEventsCount = 0;
-    public $recentMyEvents = [];         // ✅ initialized as empty array
+    public $recentMyEvents = [];
 
     public function mount()
     {
@@ -69,10 +68,8 @@ class Dashboard extends Component
             ->where('event_time', '<=', Carbon::today()->addDays(7))
             ->count();
 
-        // ✅ returns a Collection, never null
         $this->recentEvents = Event::orderBy('event_time', 'desc')->take(5)->get();
 
-        // Chart data – safe arrays
         $months = [];
         $eventsCount = [];
         for ($i = 5; $i >= 0; $i--) {
@@ -100,7 +97,6 @@ class Dashboard extends Component
             ->where('event_time', '<', Carbon::today())
             ->count();
 
-        // ✅ returns a Collection, never null
         $this->recentMyEvents = Event::where('user_id', $userId)
             ->orderBy('event_time', 'desc')
             ->take(5)

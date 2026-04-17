@@ -22,7 +22,7 @@ class Index extends Component
 
     public function mount()
     {
-        // Authorize viewing the event list
+
         $this->authorize('events-list');
     }
 
@@ -47,10 +47,6 @@ class Index extends Component
         $this->authorize('events-delete');
 
         $event = Event::findOrFail($eventId);
-
-        // Additional check: if user is not admin/manager, ensure they own the event
-        // But if they have 'events-delete', they can delete any event (admin)
-        // If you want to restrict to own events only for non-admins, keep this:
         if (!auth()->user()->can('events-delete-any')) { // optional separate permission
             if (auth()->id() !== $event->user_id) {
                 abort(403, 'You do not own this event.');
@@ -64,10 +60,7 @@ class Index extends Component
 
     protected function getBaseQuery()
     {
-        // If user has 'events-list' (which they already do to be here),
-        // but we may want to show all events or only their own.
-        // For simplicity: users see their own events, admins see all.
-        // Using Spatie role/permission to determine.
+  
         if (auth()->user()->hasRole('admin') || auth()->user()->can('events-view-all')) {
             return Event::query();
         }

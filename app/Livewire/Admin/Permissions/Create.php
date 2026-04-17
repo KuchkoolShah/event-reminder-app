@@ -17,21 +17,16 @@ class Create extends Component
     public $permission_id = null;
     public $isEditing = false;
 
-    /**
-     * Constructor – we cannot check edit vs create here because
-     * we don't yet know if a permission model is being edited.
-     * So we leave it empty or just check a base permission.
-     */
+
     public function __construct()
     {
-        // Optional: check that user has at least one of the permissions
-        // But better to check inside mount()
+
     }
 
     public function mount(Permission $permission = null)
     {
         if ($permission && $permission->exists) {
-            // Editing an existing permission
+           
             $this->authorize('permission-edit');
             $this->permission = $permission;
             $this->name = $permission->name;

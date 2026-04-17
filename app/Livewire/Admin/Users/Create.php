@@ -74,7 +74,6 @@ class Create extends Component
             'password' => Hash::make($this->password),
         ]);
 
-        // ✅ Fix: Convert role IDs to role names before syncing
         if (!empty($this->roles)) {
             $roleNames = Role::whereIn('id', $this->roles)->pluck('name')->toArray();
             $user->syncRoles($roleNames);

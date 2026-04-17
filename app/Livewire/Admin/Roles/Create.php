@@ -20,12 +20,8 @@ class Create extends Component
 
     public function mount()
     {
-        $this->authorize('role-create'); // Use a consistent permission name
-
-        // Load only necessary columns for better performance
+        $this->authorize('role-create');
         $this->permissions = Permission::select('id', 'name')->get();
-
-        // If there are no permissions, disable select-all functionality
         if ($this->permissions->isEmpty()) {
             $this->allSelected = false;
         }
@@ -44,7 +40,6 @@ class Create extends Component
         } else {
             $this->selectedPermissions = $this->permissions->pluck('id')->toArray();
         }
-        // The updatedSelectedPermissions() will automatically set $allSelected
     }
 
     protected function rules()

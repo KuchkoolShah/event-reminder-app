@@ -28,9 +28,7 @@ Route::view('profile', 'profile')
     ->name('profile');
 
 require __DIR__.'/auth.php';
-
-// Admin routes – only accessible by users with 'admin' role
-Route::middleware(['auth'])
+Route::middleware(['auth','admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {

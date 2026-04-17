@@ -22,7 +22,7 @@ class Create extends Component
     public $event_time = '';
     public $is_public = false;
 
-    // ✅ Inject EventService via constructor
+
     public function boot(EventService $eventService)
     {
         $this->eventService = $eventService;
@@ -87,14 +87,14 @@ class Create extends Component
             'title'       => $this->title,
             'description' => $this->description,
             'event_time'  => $this->event_time,
-            'is_public'   => $this->is_public,   // service expects this field
+            'is_public'   => $this->is_public,
         ];
 
         if ($this->eventId) {
-            // ✅ Use EventService to update
+
             $event = Event::findOrFail($this->eventId);
 
-            // Additional ownership check (already done in mount but safe to keep)
+
             if (!auth()->user()->can('events-edit-any') && $event->user_id !== auth()->id()) {
                 abort(403, 'You do not own this event.');
             }
@@ -102,7 +102,6 @@ class Create extends Component
             $this->eventService->updateEvent($event, $data);
             session()->flash('success', 'Event updated successfully.');
         } else {
-            // ✅ Use EventService to create (handles notification scheduling)
             $this->eventService->createEvent($data, Auth::id());
             session()->flash('success', 'Event created successfully.');
         }

@@ -73,8 +73,6 @@ class Edit extends Component
         }
 
         $this->user->update($data);
-
-        // Convert role IDs to names before syncing (only if user has permission to assign roles)
         if (auth()->user()->can('role-assign')) {
             if (!empty($this->roles)) {
                 $roleNames = Role::whereIn('id', $this->roles)->pluck('name')->toArray();
