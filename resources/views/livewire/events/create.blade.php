@@ -56,24 +56,21 @@
             </div>
 
             <!-- Description Field -->
-            <div>
-                <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description <span
-                        class="text-gray-400 text-xs">(optional)</span></label>
-                <div class="relative">
-                    <div class="absolute top-3 left-3 pointer-events-none">
-                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 6h16M4 12h16M4 18h7" />
-                        </svg>
-                    </div>
-                    <textarea id="description" wire:model.live="description" rows="4"
-                        class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
-                        placeholder="Add details about your event..."></textarea>
-                </div>
-                @error('description')
-                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                @enderror
-            </div>
+          <!-- Description Field with Summernote -->
+<div x-data="summernoteComponent()" x-init="initSummernote()" wire:ignore>
+    <label for="description" class="block text-sm font-medium text-gray-700 mb-1">
+        Description <span class="text-gray-400 text-xs">(optional)</span>
+    </label>
+    <div class="relative">
+        <textarea id="summernote-description"
+                  x-ref="summernote"
+                  class="block w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  style="display: none;"></textarea>
+    </div>
+    @error('description')
+        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+    @enderror
+</div>
 
             <!-- Date & Time Field -->
             <div>
@@ -114,3 +111,42 @@
         </form>
     </div>
 </div>
+@push('scripts')
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('summernoteComponent', () => ({
+            initSummernote() {
+                let self = this;
+                // Initialize Summernote on the hidden textarea
+                $('#summernote-description').summernote({
+                    height: 250,
+                    placeholder: 'Add detailed description...',
+                    toolbar: [
+                        ['style', ['style']],
+                        ['font', ['bold', 'underline', 'clear']],
+                        ['color', ['color']],
+                        ['para', ['ul', 'ol', 'paragraph']],
+                        ['table', ['table']],
+                        ['insert', ['link', 'picture', 'video']],
+                        ['view', ['fullscreen', 'codeview', 'help']]
+                    ],
+                    callbacks: {
+                        onChange: function(contents) {
+                            // Sync Summernote content back to Livewire property
+                            @this.set('description', contents);
+                        },
+                        onInit: function() {
+                            // Set initial content if editing an existing event
+                            let initialContent = @json($description);
+                            if (initialContent) {
+                                $('#summernote-description').summernote('code', initialContent);
+                                @this.set('description', initialContent);
+                            }
+                        }
+                    }
+                });
+            },
+        }));
+    });
+</script>
+@endpush
